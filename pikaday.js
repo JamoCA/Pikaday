@@ -35,6 +35,8 @@
      */
     var hasMoment = typeof moment === 'function',
 
+    hasDateJS = typeof Date.CultureInfo === 'object',	
+	
     hasEventListeners = !!window.addEventListener,
 
     document = window.document,
@@ -451,6 +453,11 @@
                 date = moment(opts.field.value, opts.format);
                 date = (date && date.isValid()) ? date.toDate() : null;
             }
+            else if (hasDateJS) {
+				if (Date.parse(opts.field.value) !== null) {
+					date = Date.parse(opts.field.value, opts.format);
+				}
+            }
             else {
                 date = new Date(Date.parse(opts.field.value));
             }
@@ -524,6 +531,8 @@
             if (!opts.defaultDate) {
                 if (hasMoment && opts.field.value) {
                     opts.defaultDate = moment(opts.field.value, opts.format).toDate();
+                } else if (hasDateJS) {
+                    opts.defaultDate = Date.parse(opts.field.value);
                 } else {
                     opts.defaultDate = new Date(Date.parse(opts.field.value));
                 }
@@ -622,7 +631,19 @@
          */
         toString: function(format)
         {
-            return !isDate(this._d) ? '' : hasMoment ? moment(this._d).format(format || this._o.format) : this._d.toDateString();
+			if (hasDateJS){
+				if (Date.parse(this._d) !== null){
+					return Date.parse(this._d).toString(format || this._o.format);
+				} else {
+					return '';
+				}	
+			} else if (!isDate(this._d)){
+				return '';
+			} else if (hasMoment){
+				return moment(this._d).format(format || this._o.format);
+			} else {
+				this._d.toDateString();
+			}
         },
 
         /**
@@ -661,7 +682,11 @@
                 return this.draw();
             }
             if (typeof date === 'string') {
-                date = new Date(Date.parse(date));
+				if (hasDateJS){
+					date = Date.parse(date);
+				} else {
+	                date = new Date(Date.parse(date));
+				}
             }
             if (!isDate(date)) {
                 return;
